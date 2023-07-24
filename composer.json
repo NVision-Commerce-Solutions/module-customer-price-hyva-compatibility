@@ -1,0 +1,21 @@
+{
+  "name": "commerce365/module-customer-price-hyva-compatibility",
+  "version": "1.0.0",
+  "description": "N/A",
+  "type": "magento2-module",
+  "require": {
+      "commerce365/module-customer-price": "1.2.*",
+      "hyva-themes/magento2-compat-module-fallback": "^1.1"
+  },
+  "license": [
+    ""
+  ],
+  "autoload": {
+    "files": [
+      "registration.php"
+    ],
+    "psr-4": {
+      "Commerce365\\CustomerPriceHyva\\": ""
+    }
+  }
+}

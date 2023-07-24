@@ -1,0 +1,146 @@
+<?php
+/** @var \Commerce365\CustomerPrice\ViewModel\CustomerPrice $block */
+
+$viewModel = $block->getData('viewModel'); ?>
+<?php if ($viewModel->isLoggedIn() && $viewModel->isAjaxEnabled()): ?>
+    <script>
+        window.customerpriceConfig = <?= $viewModel->getConfig() ?>;
+        window.customerpriceConfig.optionPrices = [];
+        window.customerpriceConfig.prices = [];
+        function initComponent() {
+            return {
+                hyvaCustomerPrice(sectionData) {
+                    let payload = this.collectPayload();
+                    if (!parseInt(payload.length)) {
+                        return;
+                    }
+
+                    let customer = sectionData.customer;
+                    if (customer.price_token) {
+                        this.makePriceCall(payload, customer.price_token);
+                    }
+                },
+                async makePriceCall(payload, priceToken) {
+                    var self = this;
+                    const postUrl = BASE_URL + 'rest/V1/customer-price/';
+                    const response = await fetch(postUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            productInfo: payload,
+                            storeId: window.customerpriceConfig.storeId,
+                            customerToken: priceToken,
+                            productId: window.customerpriceConfig.productId
+                        }),
+                        headers: {
+                            'Content-Type': 'application/json',
+                            "X-Requested-With": "XMLHttpRequest",
+                        }
+                    });
+                    if (!response.ok) {
+                        const message = `An error has occured: ${response.status}`;
+                        throw new Error(message);
+                    }
+                    const responseData = await response.json();
+                    responseData.forEach(productInfo => {
+                        try {
+                            self.updatePrices(productInfo);
+                        } catch (e) {
+                            console.log(e);
+                        }
+                    });
+                },
+                updatePrices: function(productInfo) {
+                    if (productInfo.configurableConfig) {
+                        this.processConfigurable(productInfo.configurableConfig, productInfo.productId);
+                    } else if(window.customerpriceConfig.productId && productInfo.priceConfig) {
+                        document.querySelectorAll(".price-box").forEach(element => {
+                            if (element.getAttribute('x-data') && element.getAttribute('x-data').match(/\d+/g).length) {
+                                const [productId] = element.getAttribute('x-data').match(/\d+/g);
+                                config = JSON.parse(productInfo.priceConfig);
+                                config.prices.isMinimalPrice = true;
+                                config.prices.tierPrices = config.tierPrices;
+                                const detail = {"detail":config.prices};
+                                window.dispatchEvent(new CustomEvent("update-prices-" + productId, detail));
+
+                                if (productInfo.tierPriceHtml) {
+                                    const tierPriceElement = document.createElement('div');
+                                    tierPriceElement.classList.add('py-4', 'my-2', 'tier-price-container');
+                                    tierPriceElement.innerHTML = productInfo.tierPriceHtml;
+                                    document.getElementById("add-to-compare").parentNode.after(tierPriceElement);
+                                }
+                            }
+                        });
+                    }
+
+                    document.querySelectorAll("[data-price-box=product-id-" + productInfo.productId + "]").forEach(element => {
+                        element.outerHTML = productInfo.priceHtml;
+                    });
+                },
+                collectPayload: function () {
+                    let payload = [];
+                    if (window.customerpriceConfig.productId) {
+                        document.querySelectorAll(".price-box").forEach(element => {
+                            if (element.getAttribute('x-data') && element.getAttribute('x-data').match(/\d+/g).length) {
+                                const [productId] = element.getAttribute('x-data').match(/\d+/g);
+                                payload.push(productId);
+                            }
+                        });
+                    }
+
+                    document.querySelectorAll("[data-role=priceBox]").forEach(element => {
+                        payload.push(element.getAttribute('data-product-id'));
+                    });
+
+                    return payload;
+                },
+
+                processConfigurable: function (config, productId) {
+                    if (!config) {
+                        return;
+                    }
+                    config = JSON.parse(config);
+                    window.customerpriceConfig.prices = config.prices;
+                    window.customerpriceConfig.optionPrices = config.optionPrices;
+                    if (window.customerpriceConfig.productId) {
+                        config.prices.isMinimalPrice = true;
+                        const detail = {"detail":config.prices};
+                        window.dispatchEvent(new CustomEvent("update-prices-" + productId, detail));
+                    }
+                },
+            }
+        }
+
+        window.initConfigurableOptions = new Proxy(window.initConfigurableOptions , {
+            // declare function interceptor on the proxy handler object
+            apply(target, objContext, args) {
+                const instance = target.apply(objContext, args);
+
+                // wrap instance hide method in a Proxy
+                instance.updatePrices = new Proxy(instance.updatePrices, {
+
+                    // declare function interceptor on the proxy handler object
+                    apply(target, objContext, args) {
+                        const value = instance.productIndex ?
+                            window.customerpriceConfig.optionPrices[instance.productIndex] :
+                            window.customerpriceConfig.prices;
+                        window.dispatchEvent(
+                            new CustomEvent(
+                                "update-prices-" + instance.productId,
+                                {
+                                    detail: Object.assign(
+                                        value,
+                                        { isMinimalPrice: instance.calculateIsMinimalPrice() }
+                                    )
+                                }
+                            )
+                        );
+                    }
+                });
+                return instance;
+            }
+        })
+    </script>
+<div x-data="initComponent()"
+     @private-content-loaded.window="hyvaCustomerPrice($event.detail.data)"
+></div>
+<?php endif; ?>
