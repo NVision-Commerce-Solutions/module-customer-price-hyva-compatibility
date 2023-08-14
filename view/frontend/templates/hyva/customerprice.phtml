@@ -1,19 +1,24 @@
 <?php
-/** @var \Commerce365\CustomerPrice\ViewModel\CustomerPrice $block */
 
-$viewModel = $block->getData('viewModel'); ?>
+use Commerce365\CustomerPrice\ViewModel\CustomerPrice;
+
+/** @var CustomerPrice $block */
+
+$viewModel = $block->getData('viewModel');
+
+?>
+
 <?php if ($viewModel->isLoggedIn() && $viewModel->isAjaxEnabled()): ?>
     <script>
         window.customerpriceConfig = <?= $viewModel->getConfig() ?>;
         window.customerpriceConfig.optionPrices = [];
         window.customerpriceConfig.prices = [];
+
         function initComponent() {
             return {
                 hyvaCustomerPrice(sectionData) {
                     let payload = this.collectPayload();
-                    if (!parseInt(payload.length)) {
-                        return;
-                    }
+                    if (!parseInt(payload.length)) return;
 
                     let customer = sectionData.customer;
                     if (customer.price_token) {
@@ -21,7 +26,7 @@ $viewModel = $block->getData('viewModel'); ?>
                     }
                 },
                 async makePriceCall(payload, priceToken) {
-                    var self = this;
+                    let self = this;
                     const postUrl = BASE_URL + 'rest/V1/customer-price/';
                     const response = await fetch(postUrl, {
                         method: 'POST',
@@ -45,7 +50,7 @@ $viewModel = $block->getData('viewModel'); ?>
                         try {
                             self.updatePrices(productInfo);
                         } catch (e) {
-                            console.log(e);
+                            console.error(e);
                         }
                     });
                 },
@@ -59,7 +64,7 @@ $viewModel = $block->getData('viewModel'); ?>
                                 config = JSON.parse(productInfo.priceConfig);
                                 config.prices.isMinimalPrice = true;
                                 config.prices.tierPrices = config.tierPrices;
-                                const detail = {"detail":config.prices};
+                                const detail = { "detail": config.prices };
                                 window.dispatchEvent(new CustomEvent("update-prices-" + productId, detail));
 
                                 if (productInfo.tierPriceHtml) {
@@ -79,11 +84,16 @@ $viewModel = $block->getData('viewModel'); ?>
                 collectPayload: function () {
                     let payload = [];
                     if (window.customerpriceConfig.productId) {
-                        document.querySelectorAll(".price-box").forEach(element => {
-                            if (element.getAttribute('x-data') && element.getAttribute('x-data').match(/\d+/g).length) {
-                                const [productId] = element.getAttribute('x-data').match(/\d+/g);
-                                payload.push(productId);
-                            }
+                        document.querySelectorAll(".price-box").forEach(el => {
+                            const elData = el.getAttribute('x-data');
+                            if (!elData) return;
+
+                            const elDataPrice = el.getAttribute('x-data').match(/\d+/g);
+                            if (!elDataPrice) return;
+                            if (!elDataPrice.length) return;
+
+                            const [productId] = elDataPrice;
+                            payload.push(productId);
                         });
                     }
 
@@ -95,15 +105,14 @@ $viewModel = $block->getData('viewModel'); ?>
                 },
 
                 processConfigurable: function (config, productId) {
-                    if (!config) {
-                        return;
-                    }
+                    if (!config) return;
+
                     config = JSON.parse(config);
                     window.customerpriceConfig.prices = config.prices;
                     window.customerpriceConfig.optionPrices = config.optionPrices;
                     if (window.customerpriceConfig.productId) {
                         config.prices.isMinimalPrice = true;
-                        const detail = {"detail":config.prices};
+                        const detail = { "detail": config.prices };
                         window.dispatchEvent(new CustomEvent("update-prices-" + productId, detail));
                     }
                 },
@@ -111,14 +120,14 @@ $viewModel = $block->getData('viewModel'); ?>
         }
 
         window.initConfigurableOptions = new Proxy(window.initConfigurableOptions , {
-            // declare function interceptor on the proxy handler object
+            // Declare function interceptor on the proxy handler object
             apply(target, objContext, args) {
                 const instance = target.apply(objContext, args);
 
-                // wrap instance hide method in a Proxy
+                // Wrap instance hide method in a Proxy
                 instance.updatePrices = new Proxy(instance.updatePrices, {
 
-                    // declare function interceptor on the proxy handler object
+                    // Declare function interceptor on the proxy handler object
                     apply(target, objContext, args) {
                         const value = instance.productIndex ?
                             window.customerpriceConfig.optionPrices[instance.productIndex] :
@@ -140,7 +149,8 @@ $viewModel = $block->getData('viewModel'); ?>
             }
         })
     </script>
-<div x-data="initComponent()"
-     @private-content-loaded.window="hyvaCustomerPrice($event.detail.data)"
+<div
+    x-data="initComponent()"
+    @private-content-loaded.window="hyvaCustomerPrice($event.detail.data)"
 ></div>
 <?php endif; ?>
