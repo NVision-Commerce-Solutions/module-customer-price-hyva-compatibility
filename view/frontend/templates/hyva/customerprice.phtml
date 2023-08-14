@@ -123,6 +123,8 @@ $viewModel = $block->getData('viewModel'); ?>
                         const value = instance.productIndex ?
                             window.customerpriceConfig.optionPrices[instance.productIndex] :
                             window.customerpriceConfig.prices;
+                        if (value.length === 0) return;
+
                         window.dispatchEvent(
                             new CustomEvent(
                                 "update-prices-" + instance.productId,
