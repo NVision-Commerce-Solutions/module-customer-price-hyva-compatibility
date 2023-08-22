@@ -100,8 +100,11 @@ $viewModel = $block->getData('viewModel'); ?>
                     }
                     config = JSON.parse(config);
                     window.customerpriceConfig.prices = config.prices;
-                    window.customerpriceConfig.optionPrices = config.optionPrices;
-                    if (window.customerpriceConfig.productId) {
+
+                    Object.keys(config.optionPrices).forEach(key =>
+                        window.customerpriceConfig.optionPrices[key] = config.optionPrices[key]
+                    );
+                    if (window.customerpriceConfig.productId && window.customerpriceConfig.productId === productId) {
                         config.prices.isMinimalPrice = true;
                         const detail = {"detail":config.prices};
                         window.dispatchEvent(new CustomEvent("update-prices-" + productId, detail));
