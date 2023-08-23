@@ -7,7 +7,7 @@ $viewModel = $block->getData('viewModel'); ?>
         window.customerpriceConfig = <?= $viewModel->getConfig() ?>;
         window.customerpriceConfig.optionPrices = [];
         window.customerpriceConfig.prices = [];
-        function initComponent() {
+        function initCustomerPrice() {
             return {
                 hyvaCustomerPrice(sectionData) {
                     let payload = this.collectPayload();
@@ -143,7 +143,7 @@ $viewModel = $block->getData('viewModel'); ?>
             }
         })
     </script>
-<div x-data="initComponent()"
+<div x-data="initCustomerPrice()"
      @private-content-loaded.window="hyvaCustomerPrice($event.detail.data)"
 ></div>
 <?php endif; ?>
