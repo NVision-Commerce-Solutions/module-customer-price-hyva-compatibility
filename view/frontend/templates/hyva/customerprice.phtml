@@ -7,13 +7,11 @@ $viewModel = $block->getData('viewModel'); ?>
         window.customerpriceConfig = <?= $viewModel->getConfig() ?>;
         window.customerpriceConfig.optionPrices = [];
         window.customerpriceConfig.prices = [];
-        function initCustomerPrice() {
+        function initCommerce365CustomerPrice() {
             return {
                 hyvaCustomerPrice(sectionData) {
                     let payload = this.collectPayload();
-                    if (!parseInt(payload.length)) {
-                        return;
-                    }
+                    if (!parseInt(payload.length)) return;
 
                     let customer = sectionData.customer;
                     if (customer.price_token) {
@@ -21,7 +19,7 @@ $viewModel = $block->getData('viewModel'); ?>
                     }
                 },
                 async makePriceCall(payload, priceToken) {
-                    var self = this;
+                    let self = this;
                     const postUrl = BASE_URL + 'rest/V1/customer-price/';
                     const response = await fetch(postUrl, {
                         method: 'POST',
@@ -45,7 +43,7 @@ $viewModel = $block->getData('viewModel'); ?>
                         try {
                             self.updatePrices(productInfo);
                         } catch (e) {
-                            console.log(e);
+                            console.error(e);
                         }
                     });
                 },
@@ -54,23 +52,23 @@ $viewModel = $block->getData('viewModel'); ?>
                         this.processConfigurable(productInfo.configurableConfig, productInfo.productId);
                     } else if(window.customerpriceConfig.productId && productInfo.priceConfig) {
                         document.querySelectorAll(".price-box").forEach(element => {
-                            if (element.getAttribute('x-data') && element.getAttribute('x-data').match(/\d+/g).length) {
-                                const [productId] = element.getAttribute('x-data').match(/\d+/g);
-                                config = JSON.parse(productInfo.priceConfig);
-                                config.prices.isMinimalPrice = true;
-                                config.prices.tierPrices = config.tierPrices;
-                                const detail = {"detail":config.prices};
-                                window.dispatchEvent(new CustomEvent("update-prices-" + productId, detail));
+                            const productId = this.getElementProductId(element);
+                            if (!productId) return;
 
-                                if (productInfo.tierPriceHtml) {
-                                    // Make sure to not render this a second time
-                                    if (document.getElementById('customer-tier-price')) return;
+                            config = JSON.parse(productInfo.priceConfig);
+                            config.prices.isMinimalPrice = true;
+                            config.prices.tierPrices = config.tierPrices;
+                            const detail = { "detail" : config.prices };
+                            window.dispatchEvent(new CustomEvent("update-prices-" + productId, detail));
 
-                                    const tierPriceElement = document.createElement('div');
-                                    tierPriceElement.classList.add('py-4', 'my-2', 'tier-price-container');
-                                    tierPriceElement.innerHTML = productInfo.tierPriceHtml;
-                                    document.getElementById("add-to-compare").parentNode.after(tierPriceElement);
-                                }
+                            if (productInfo.tierPriceHtml) {
+                                // Make sure to not render this a second time
+                                if (document.getElementById('customer-tier-price')) return;
+
+                                const tierPriceElement = document.createElement('div');
+                                tierPriceElement.classList.add('py-4', 'my-2', 'tier-price-container');
+                                tierPriceElement.innerHTML = productInfo.tierPriceHtml;
+                                document.getElementById("add-to-compare").parentNode.after(tierPriceElement);
                             }
                         });
                     }
@@ -79,14 +77,24 @@ $viewModel = $block->getData('viewModel'); ?>
                         element.outerHTML = productInfo.priceHtml;
                     });
                 },
+                getElementProductId: function(element) {
+                   const xData = element.getAttribute('x-data');
+                   if (!xData) return;
+
+                   let productId = element.getAttribute('x-data').match(/\d+/g);
+                   if (!productId || !productId.length) return;
+                   [productId] = productId;
+
+                   return productId;
+                },
+
                 collectPayload: function () {
                     let payload = [];
                     if (window.customerpriceConfig.productId) {
                         document.querySelectorAll(".price-box").forEach(element => {
-                            if (element.getAttribute('x-data') && element.getAttribute('x-data').match(/\d+/g).length) {
-                                const [productId] = element.getAttribute('x-data').match(/\d+/g);
-                                payload.push(productId);
-                            }
+                            const productId = this.getElementProductId(element);
+                            if (!productId) return;
+                            payload.push(productId);
                         });
                     }
 
@@ -98,9 +106,8 @@ $viewModel = $block->getData('viewModel'); ?>
                 },
 
                 processConfigurable: function (config, productId) {
-                    if (!config) {
-                        return;
-                    }
+                    if (!config) return;
+
                     config = JSON.parse(config);
                     window.customerpriceConfig.prices = config.prices;
 
@@ -109,7 +116,7 @@ $viewModel = $block->getData('viewModel'); ?>
                     );
                     if (window.customerpriceConfig.productId && window.customerpriceConfig.productId === productId) {
                         config.prices.isMinimalPrice = true;
-                        const detail = {"detail":config.prices};
+                        const detail = { "detail" : config.prices };
                         window.dispatchEvent(new CustomEvent("update-prices-" + productId, detail));
                     }
                 },
@@ -117,18 +124,19 @@ $viewModel = $block->getData('viewModel'); ?>
         }
 
         window.initConfigurableOptions = new Proxy(window.initConfigurableOptions , {
-            // declare function interceptor on the proxy handler object
+            // Declare function interceptor on the proxy handler object
             apply(target, objContext, args) {
                 const instance = target.apply(objContext, args);
 
-                // wrap instance hide method in a Proxy
+                // Wrap instance hide method in a Proxy
                 instance.updatePrices = new Proxy(instance.updatePrices, {
 
-                    // declare function interceptor on the proxy handler object
+                    // Declare function interceptor on the proxy handler object
                     apply(target, objContext, args) {
                         const value = instance.productIndex ?
                             window.customerpriceConfig.optionPrices[instance.productIndex] :
                             window.customerpriceConfig.prices;
+                        if (value.length === 0) return target.apply(objContext, args);
                         window.dispatchEvent(
                             new CustomEvent(
                                 "update-prices-" + instance.productId,
@@ -146,7 +154,8 @@ $viewModel = $block->getData('viewModel'); ?>
             }
         })
     </script>
-<div x-data="initCustomerPrice()"
-     @private-content-loaded.window="hyvaCustomerPrice($event.detail.data)"
+<div
+    x-data="initCommerce365CustomerPrice()"
+    @private-content-loaded.window="hyvaCustomerPrice($event.detail.data)"
 ></div>
 <?php endif; ?>
