@@ -67,6 +67,7 @@ $viewModel = $block->getData('viewModel'); ?>
 
                                 const tierPriceElement = document.createElement('div');
                                 tierPriceElement.classList.add('py-4', 'my-2', 'tier-price-container');
+                                tierPriceElement.id = 'customer-tier-price';
                                 tierPriceElement.innerHTML = productInfo.tierPriceHtml;
                                 document.getElementById("add-to-compare").parentNode.after(tierPriceElement);
                             }
