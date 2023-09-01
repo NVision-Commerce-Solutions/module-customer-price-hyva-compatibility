@@ -1,0 +1,30 @@
+<?php
+
+declare(strict_types=1);
+
+use Magento\Catalog\Model\Product;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+
+/** @var Product $product */
+$product = $block->getProduct();
+
+?>
+<script>
+    (() => {
+        const initFnName = 'initPrice<?= (int)$product->getId() ?>'
+        if (window[initFnName]) {
+            window[initFnName] = new Proxy(window[initFnName] , {
+                apply(target, objContext, args) {
+                    const instance = target.apply(objContext, args);
+                    instance.eventListeners['@update-initial-price-<?= (int)$product->getId() ?>.window'] = function (event) {
+                        this.initialFinalPrice = event.detail;
+                    }
+
+                    return instance;
+                }
+            });
+        }
+    })()
+</script>
