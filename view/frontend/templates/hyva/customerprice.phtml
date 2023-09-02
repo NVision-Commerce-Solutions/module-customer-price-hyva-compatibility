@@ -50,7 +50,7 @@ $viewModel = $block->getData('viewModel'); ?>
                 updatePrices: function(productInfo) {
                     if (productInfo.configurableConfig) {
                         this.processConfigurable(productInfo.configurableConfig, productInfo.productId);
-                    } else if(window.customerpriceConfig.productId && productInfo.priceConfig) {
+                    } else if(window.customerpriceConfig.productId && window.customerpriceConfig.productId == productInfo.productId && productInfo.priceConfig) {
                         document.querySelectorAll(".price-box").forEach(element => {
                             const productId = this.getElementProductId(element);
                             if (!productId) return;
@@ -59,17 +59,13 @@ $viewModel = $block->getData('viewModel'); ?>
                             config.prices.isMinimalPrice = true;
                             config.prices.tierPrices = config.tierPrices;
                             const detail = { "detail" : config.prices };
+                            const qty = document.getElementById('qty[' + productId + ']').value;
+                            if (qty > 1) {
+                                window.dispatchEvent(new CustomEvent("update-qty-" + productId, {"detail": qty}));
+                            }
                             window.dispatchEvent(new CustomEvent("update-prices-" + productId, detail));
 
-                            if (productInfo.tierPriceHtml) {
-                                // Make sure to not render this a second time
-                                if (document.getElementById('customer-tier-price')) return;
-
-                                const tierPriceElement = document.createElement('div');
-                                tierPriceElement.classList.add('py-4', 'my-2', 'tier-price-container');
-                                tierPriceElement.innerHTML = productInfo.tierPriceHtml;
-                                document.getElementById("add-to-compare").parentNode.after(tierPriceElement);
-                            }
+                            this.processTierPrices(productInfo);
                         });
                     }
 
@@ -77,6 +73,18 @@ $viewModel = $block->getData('viewModel'); ?>
                         element.outerHTML = productInfo.priceHtml;
                     });
                 },
+
+                processTierPrices: function(productInfo) {
+                    if (!productInfo.tierPriceHtml) return;
+                    // Make sure to not render this a second time
+                    if (document.getElementById('customer-tier-price')) return;
+
+                    const tierPriceElement = document.createElement('div');
+                    tierPriceElement.classList.add('py-4', 'my-2', 'tier-price-container');
+                    tierPriceElement.innerHTML = productInfo.tierPriceHtml;
+                    document.getElementById("add-to-compare").parentNode.after(tierPriceElement);
+                },
+
                 getElementProductId: function(element) {
                    const xData = element.getAttribute('x-data');
                    if (!xData) return;
@@ -117,6 +125,7 @@ $viewModel = $block->getData('viewModel'); ?>
                     if (window.customerpriceConfig.productId && window.customerpriceConfig.productId === productId) {
                         config.prices.isMinimalPrice = true;
                         const detail = { "detail" : config.prices };
+                        window.dispatchEvent(new CustomEvent("update-initial-price-" + productId, {detail: config.prices.finalPrice.amount}));
                         window.dispatchEvent(new CustomEvent("update-prices-" + productId, detail));
                     }
                 },
@@ -136,7 +145,7 @@ $viewModel = $block->getData('viewModel'); ?>
                         const value = instance.productIndex ?
                             window.customerpriceConfig.optionPrices[instance.productIndex] :
                             window.customerpriceConfig.prices;
-                        if (value.length === 0) return target.apply(objContext, args);
+                        if (value === undefined || value.length === 0) return target.apply(objContext, args);
                         window.dispatchEvent(
                             new CustomEvent(
                                 "update-prices-" + instance.productId,
