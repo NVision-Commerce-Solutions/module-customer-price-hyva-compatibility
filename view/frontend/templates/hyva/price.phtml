@@ -21,7 +21,34 @@ $product = $block->getProduct();
                     instance.eventListeners['@update-initial-price-<?= (int)$product->getId() ?>.window'] = function (event) {
                         this.initialFinalPrice = event.detail;
                     }
+                    instance.eventListeners['@update-uom-price-<?= (int)$product->getId() ?>.window'] = function (event) {
+                        this.pricePerUom = event.detail.pricePerUOM;
+                        this.uom = event.detail.UOM;
+                        if (this.pricePerUom === undefined || this.uom === undefined) {
+                            return;
+                        }
+                        let priceUomElement = document.getElementById('price-per-uom-<?= (int)$product->getId() ?>');
+                        if (priceUomElement) {
+                            priceUomElement.innerHTML = '(' + this.pricePerUom + '/' + this.uom + ')';
+                        } else {
+                            const container = document.getElementById('product-price-<?= (int)$product->getId() ?>');
+                            priceUomElement = document.createElement('span');
+                            priceUomElement.classList.add('commerce365-price-per-uom');
+                            priceUomElement.setAttribute('id', 'price-per-uom-<?= (int)$product->getId() ?>');
+                            priceUomElement.innerHTML = '(' + this.pricePerUom + '/' + this.uom + ')';
+                            container.appendChild(priceUomElement);
+                        }
+                    }
 
+                    instance.getFormattedFinalPrice = new Proxy(instance.getFormattedFinalPrice, {
+                        apply(target, objContext, args) {
+                            if (window.uomDetail !== undefined) {
+                                window.dispatchEvent(new CustomEvent("update-uom-price-<?= (int)$product->getId() ?>", window.uomDetail));
+                            }
+
+                            return target.apply(objContext, args);
+                        }
+                    })
                     return instance;
                 }
             });
