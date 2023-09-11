@@ -64,6 +64,9 @@ $viewModel = $block->getData('viewModel'); ?>
                                 window.dispatchEvent(new CustomEvent("update-qty-" + productId, {"detail": qty}));
                             }
                             window.dispatchEvent(new CustomEvent("update-prices-" + productId, detail));
+                            if (Object.keys(config.uomPrice).length) {
+                                window.uomDetail = { "detail": config.uomPrice };
+                            }
 
                             this.processTierPrices(productInfo);
                         });
@@ -124,7 +127,7 @@ $viewModel = $block->getData('viewModel'); ?>
                     );
                     if (window.customerpriceConfig.productId && window.customerpriceConfig.productId === productId) {
                         config.prices.isMinimalPrice = true;
-                        const detail = { "detail" : config.prices };
+                        const detail = { detail : config.prices };
                         window.dispatchEvent(new CustomEvent("update-initial-price-" + productId, {detail: config.prices.finalPrice.amount}));
                         window.dispatchEvent(new CustomEvent("update-prices-" + productId, detail));
                     }
@@ -157,8 +160,33 @@ $viewModel = $block->getData('viewModel'); ?>
                                 }
                             )
                         );
+                        instance.applyUomPirce(value.uomPrice);
                     }
                 });
+
+                instance.applyUomPirce = function (uomPrice) {
+                    if (!uomPrice) {
+                        return;
+                    }
+
+                    if (window.customerpriceConfig.productId === instance.productId) {
+                        window.dispatchEvent(
+                            new CustomEvent("update-uom-price-" + instance.productId, { detail: uomPrice})
+                        );
+                    } else {
+                        let priceUomElement = document.getElementById('price-per-uom-' + instance.productId);
+                        if (priceUomElement) {
+                            priceUomElement.innerHTML = uomPrice.pricePerUOM + '/' + uomPrice.UOM;
+                        } else {
+                            const container = document.getElementById('product-price-' + instance.productId);
+                            priceUomElement = document.createElement('div');
+                            priceUomElement.classList.add('commerce365-price-per-uom');
+                            priceUomElement.setAttribute('id', 'price-per-uom-' + instance.productId);
+                            priceUomElement.innerHTML = uomPrice.pricePerUOM + '/' + uomPrice.UOM;
+                            container.parentNode.after(priceUomElement);
+                        }
+                    }
+                }
                 return instance;
             }
         })
