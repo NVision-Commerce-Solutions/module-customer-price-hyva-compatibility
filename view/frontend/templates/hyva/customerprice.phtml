@@ -9,15 +9,24 @@ $viewModel = $block->getData('viewModel'); ?>
         window.customerpriceConfig.prices = [];
         function initCommerce365CustomerPrice() {
             return {
+                sectionData: null,
+
                 hyvaCustomerPrice(sectionData) {
-                    let payload = this.collectPayload();
+                    this.sectionData = sectionData;
+                    this.createMutationObserver();
+                    this.run();
+                },
+
+                run: function(container = null) {
+                    let payload = this.collectPayload(container);
                     if (!parseInt(payload.length)) return;
 
-                    let customer = sectionData.customer;
+                    let customer = this.sectionData.customer;
                     if (customer.price_token) {
                         this.makePriceCall(payload, customer.price_token);
                     }
                 },
+
                 async makePriceCall(payload, priceToken) {
                     let self = this;
                     const postUrl = BASE_URL + 'rest/V1/customer-price/';
@@ -64,7 +73,7 @@ $viewModel = $block->getData('viewModel'); ?>
                                 window.dispatchEvent(new CustomEvent("update-qty-" + productId, {"detail": qty}));
                             }
                             window.dispatchEvent(new CustomEvent("update-prices-" + productId, detail));
-                            if (Object.keys(config.uomPrice).length) {
+                            if (typeof config.uomPrice === 'object' && Object.keys(config.uomPrice).length) {
                                 window.uomDetail = { "detail": config.uomPrice };
                             }
 
@@ -99,17 +108,18 @@ $viewModel = $block->getData('viewModel'); ?>
                    return productId;
                 },
 
-                collectPayload: function () {
+                collectPayload: function (container = null) {
                     let payload = [];
+                    container = container ?? document;
                     if (window.customerpriceConfig.productId) {
-                        document.querySelectorAll(".price-box").forEach(element => {
+                        container.querySelectorAll(".price-box").forEach(element => {
                             const productId = this.getElementProductId(element);
                             if (!productId) return;
                             payload.push(productId);
                         });
                     }
 
-                    document.querySelectorAll("[data-role=priceBox]").forEach(element => {
+                    container.querySelectorAll("[data-role=priceBox]").forEach(element => {
                         payload.push(element.getAttribute('data-product-id'));
                     });
 
@@ -132,6 +142,29 @@ $viewModel = $block->getData('viewModel'); ?>
                         window.dispatchEvent(new CustomEvent("update-prices-" + productId, detail));
                     }
                 },
+
+                createMutationObserver: function() {
+                    const self = this;
+                    var mutationObserver = new MutationObserver(function(mutations) {
+                        mutations.forEach(function(mutation) {
+                            mutation.addedNodes.forEach(function (addedNode) {
+                                if (addedNode instanceof Node && 'querySelectorAll' in addedNode
+                                    && addedNode.classList.value !== 'price-box price-final_price') {
+                                    self.run(addedNode);
+                                }
+                            });
+                        });
+                    });
+                    const productsContainer = document.querySelector('div.column.main');
+                    mutationObserver.observe(productsContainer, {
+                        attributes: true,
+                        characterData: true,
+                        childList: true,
+                        subtree: true,
+                        attributeOldValue: true,
+                        characterDataOldValue: true
+                    });
+                }
             }
         }
 
