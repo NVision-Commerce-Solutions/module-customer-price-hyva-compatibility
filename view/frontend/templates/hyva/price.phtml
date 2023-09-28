@@ -42,7 +42,14 @@ $product = $block->getProduct();
 
                     instance.getFormattedFinalPrice = new Proxy(instance.getFormattedFinalPrice, {
                         apply(target, objContext, args) {
-                            if (window.uomDetail !== undefined) {
+                            if (window.customerpriceConfig.tierPricesPerUom && instance.qty > 1) {
+                                window.customerpriceConfig.tierPricesPerUom.forEach(tierPrice => {
+                                    if (instance.qty >= tierPrice.qty) {
+                                        const detail = {pricePerUOM: tierPrice.additional.pricePerUOM, UOM: tierPrice.additional.UOM}
+                                        window.dispatchEvent(new CustomEvent("update-uom-price-<?= (int)$product->getId() ?>", {detail: detail}));
+                                    }
+                                });
+                            } else if (window.uomDetail !== undefined) {
                                 window.dispatchEvent(new CustomEvent("update-uom-price-<?= (int)$product->getId() ?>", window.uomDetail));
                             }
 

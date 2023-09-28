@@ -7,6 +7,7 @@ $viewModel = $block->getData('viewModel'); ?>
         window.customerpriceConfig = <?= $viewModel->getConfig() ?>;
         window.customerpriceConfig.optionPrices = [];
         window.customerpriceConfig.prices = [];
+        window.customerpriceConfig.tierPricesPerUom = [];
         function initCommerce365CustomerPrice() {
             return {
                 sectionData: null,
@@ -60,6 +61,7 @@ $viewModel = $block->getData('viewModel'); ?>
                     if (productInfo.configurableConfig) {
                         this.processConfigurable(productInfo.configurableConfig, productInfo.productId);
                     } else if(window.customerpriceConfig.productId && window.customerpriceConfig.productId == productInfo.productId && productInfo.priceConfig) {
+                        window.customerpriceConfig.tierPricesPerUom = JSON.parse(productInfo.tierPricesPerUom);
                         document.querySelectorAll(".price-box").forEach(element => {
                             const productId = this.getElementProductId(element);
                             if (!productId) return;
@@ -81,9 +83,11 @@ $viewModel = $block->getData('viewModel'); ?>
                         });
                     }
 
-                    document.querySelectorAll("[data-price-box=product-id-" + productInfo.productId + "]").forEach(element => {
-                        element.outerHTML = productInfo.priceHtml;
-                    });
+                    if (!window.customerpriceConfig.productId || window.customerpriceConfig.productId !== productInfo.productId) {
+                        document.querySelectorAll("[data-price-box=product-id-" + productInfo.productId + "]").forEach(element => {
+                            element.outerHTML = productInfo.priceHtml;
+                        });
+                    }
                 },
 
                 processTierPrices: function(productInfo) {
@@ -137,6 +141,9 @@ $viewModel = $block->getData('viewModel'); ?>
                     );
                     if (window.customerpriceConfig.productId && window.customerpriceConfig.productId === productId) {
                         config.prices.isMinimalPrice = true;
+                        if (!config.prices.tierPrices) {
+                            config.prices.tierPrices = [];
+                        }
                         const detail = { detail : config.prices };
                         window.dispatchEvent(new CustomEvent("update-initial-price-" + productId, {detail: config.prices.finalPrice.amount}));
                         window.dispatchEvent(new CustomEvent("update-prices-" + productId, detail));
