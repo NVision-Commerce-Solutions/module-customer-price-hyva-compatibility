@@ -1,10 +1,10 @@
 {
   "name": "commerce365/module-customer-price-hyva-compatibility",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "N/A",
   "type": "magento2-module",
   "require": {
-      "commerce365/module-customer-price": "1.4.*",
+      "commerce365/module-customer-price": "1.5.*",
       "hyva-themes/magento2-compat-module-fallback": "^1.1"
   },
   "license": [
