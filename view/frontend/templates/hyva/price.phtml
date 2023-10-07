@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 use Magento\Catalog\Model\Product;
 use Magento\Framework\View\Element\Template;
+use Magento\Framework\Escaper;
+
+/** @var Escaper $escaper */
 
 /** @var Template $block */
 
@@ -42,14 +45,18 @@ $product = $block->getProduct();
 
                     instance.getFormattedFinalPrice = new Proxy(instance.getFormattedFinalPrice, {
                         apply(target, objContext, args) {
-                            if (window.customerpriceConfig.tierPricesPerUom && instance.qty > 1) {
-                                window.customerpriceConfig.tierPricesPerUom.forEach(tierPrice => {
+                            let tierFound = false;
+                            if (window.customerpriceConfig.selectedTierPriceInfo && instance.qty > 1) {
+                                window.customerpriceConfig.selectedTierPriceInfo.forEach(tierPrice => {
                                     if (instance.qty >= tierPrice.qty) {
                                         const detail = {pricePerUOM: tierPrice.additional.pricePerUOM, UOM: tierPrice.additional.UOM}
                                         window.dispatchEvent(new CustomEvent("update-uom-price-<?= (int)$product->getId() ?>", {detail: detail}));
+                                        tierFound = true;
                                     }
                                 });
-                            } else if (window.uomDetail !== undefined) {
+                            }
+
+                            if (!tierFound && window.uomDetail !== undefined) {
                                 window.dispatchEvent(new CustomEvent("update-uom-price-<?= (int)$product->getId() ?>", window.uomDetail));
                             }
 

@@ -8,6 +8,7 @@ $viewModel = $block->getData('viewModel'); ?>
         window.customerpriceConfig.optionPrices = [];
         window.customerpriceConfig.prices = [];
         window.customerpriceConfig.tierPricesPerUom = [];
+        window.customerpriceConfig.selectedTierPriceInfo = [];
         function initCommerce365CustomerPrice() {
             return {
                 sectionData: null,
@@ -59,16 +60,15 @@ $viewModel = $block->getData('viewModel'); ?>
                 },
                 updatePrices: function(productInfo) {
                     if (productInfo.configurableConfig) {
+                        window.customerpriceConfig.tierPricesPerUom = JSON.parse(productInfo.tierPricesPerUom);
                         this.processConfigurable(productInfo.configurableConfig, productInfo.productId);
                     } else if(window.customerpriceConfig.productId && window.customerpriceConfig.productId == productInfo.productId && productInfo.priceConfig) {
-                        window.customerpriceConfig.tierPricesPerUom = JSON.parse(productInfo.tierPricesPerUom);
+                        window.customerpriceConfig.selectedTierPriceInfo = JSON.parse(productInfo.tierPricesPerUom)[productInfo.productId];
                         document.querySelectorAll(".price-box").forEach(element => {
                             const productId = this.getElementProductId(element);
                             if (!productId) return;
 
-                            config = JSON.parse(productInfo.priceConfig);
-                            config.prices.isMinimalPrice = true;
-                            config.prices.tierPrices = config.tierPrices;
+                            let config = this.preparePriceConfig(productInfo);
                             const detail = { "detail" : config.prices };
                             const qty = document.getElementById('qty[' + productId + ']').value;
                             if (qty > 1) {
@@ -88,6 +88,14 @@ $viewModel = $block->getData('viewModel'); ?>
                             element.outerHTML = productInfo.priceHtml;
                         });
                     }
+                },
+
+                preparePriceConfig: function(productInfo) {
+                    let config = JSON.parse(productInfo.priceConfig);
+                    config.prices.isMinimalPrice = true;
+                    config.prices.tierPrices = config.tierPrices;
+
+                    return config;
                 },
 
                 processTierPrices: function(productInfo) {
@@ -188,6 +196,7 @@ $viewModel = $block->getData('viewModel'); ?>
                         const value = instance.productIndex ?
                             window.customerpriceConfig.optionPrices[instance.productIndex] :
                             window.customerpriceConfig.prices;
+                        window.customerpriceConfig.selectedTierPriceInfo = window.customerpriceConfig.tierPricesPerUom[instance.productIndex];
                         if (value === undefined || value.length === 0) return target.apply(objContext, args);
                         window.dispatchEvent(
                             new CustomEvent(
@@ -200,6 +209,7 @@ $viewModel = $block->getData('viewModel'); ?>
                                 }
                             )
                         );
+                        window.uomDetail = {detail: value.uomPrice};
                         instance.applyUomPirce(value.uomPrice);
                     }
                 });

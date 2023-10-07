@@ -9,6 +9,12 @@
                    template="Commerce365_CustomerPriceHyva::hyva/price.phtml"
                    after="product.detail.page"
             />
+            <block class="Magento\Catalog\Block\Product\Price"
+                   name="commerce365.product.info.tier_price_uom"
+                   template="Commerce365_CustomerPriceHyva::hyva/tier_price_uom.phtml"
+                   after="product.detail.page"
+                   ifconfig="commerce365config_general/b2b_pricing/show_priceperuom_tier"
+            />
         </referenceContainer>
     </body>
 </page>

@@ -5,4 +5,8 @@
         <plugin name="commerce365_hyva_set_current_product"
                 type="Commerce365\CustomerPriceHyva\Plugin\SetCurrentProduct"/>
     </type>
+    <type name="Commerce365\CustomerPrice\Service\PriceInfoProvider\PriceHtmlProvider">
+        <plugin name="commerce365_hyva_filter_price_html"
+                type="Commerce365\CustomerPriceHyva\Plugin\FilterPriceHtml"/>
+    </type>
 </config>
