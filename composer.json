@@ -1,7 +1,8 @@
 {
   "name": "commerce365/module-customer-price-hyva-compatibility",
   "version": "1.0.7",
-  "description": "N/A",
+  "description": "Commerce 365 for Magento - B2B - Customer price - Hyvä compatibility module",
+  "homepage": "https://n.vision/products/commerce-365-for-magento-b2b/",
   "type": "magento2-module",
   "require": {
       "commerce365/module-customer-price": "1.6.*",
