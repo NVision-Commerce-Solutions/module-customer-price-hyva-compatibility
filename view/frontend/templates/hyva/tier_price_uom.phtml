@@ -1,0 +1,50 @@
+<?php
+
+declare(strict_types=1);
+
+use Magento\Catalog\Model\Product;
+use Magento\Framework\View\Element\Template;
+use Magento\Framework\Escaper;
+
+/** @var Escaper $escaper */
+
+/** @var Template $block */
+
+/** @var Product $product */
+$product = $block->getProduct();
+?>
+
+<script>
+    (() => {
+        const tierInitFnName = 'initTierPrices<?= (int)$product->getId() ?>'
+        if (window[tierInitFnName]) {
+            window[tierInitFnName] = new Proxy(window[tierInitFnName] , {
+                apply(target, objContext, args) {
+                    const instance = target.apply(objContext, args);
+
+                    instance.getItemHtml = new Proxy(instance.getItemHtml, {
+                        apply(target, objContext, args) {
+                            const item = args[0];
+                            let detail = {};
+                            if (!window.customerpriceConfig.selectedTierPriceInfo.length) {
+                                return target.apply(objContext, args);
+                            }
+                            window.customerpriceConfig.selectedTierPriceInfo.forEach(tierPrice => {
+                                if (item.qty >= tierPrice.qty) {
+                                    detail = {pricePerUOM: tierPrice.additional.pricePerUOM, UOM: tierPrice.additional.UOM}
+                                }
+                            });
+
+                            return '<?= $escaper->escapeHtml(__('Buy %1 for %2 (%3) each and', '%1', '%2')) ?>'
+                                .replace('%1', item.qty)
+                                .replace('%2', hyva.formatPrice(item.price))
+                                .replace('%3', detail.pricePerUOM + '/' + detail.UOM)
+                                .replace()
+                        }
+                    })
+                    return instance;
+                }
+            });
+        }
+    })()
+</script>
