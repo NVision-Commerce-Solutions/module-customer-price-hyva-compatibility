@@ -12,8 +12,9 @@ use Magento\Framework\Escaper;
 
 /** @var Product $product */
 $product = $block->getProduct();
-
+$viewModel = $block->getData('viewModel');
 ?>
+<?php if ($viewModel->isLoggedIn() && $viewModel->isAjaxEnabled()): ?>
 <script>
     (() => {
         const initFnName = 'initPrice<?= (int)$product->getId() ?>'
@@ -69,3 +70,4 @@ $product = $block->getProduct();
         }
     })()
 </script>
+<?php endif; ?>
