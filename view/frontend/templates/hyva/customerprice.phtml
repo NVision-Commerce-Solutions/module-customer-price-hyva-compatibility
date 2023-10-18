@@ -5,6 +5,7 @@ $viewModel = $block->getData('viewModel'); ?>
 <?php if ($viewModel->isLoggedIn() && $viewModel->isAjaxEnabled()): ?>
     <script>
         window.customerpriceConfig = <?= $viewModel->getConfig() ?>;
+        window.preselectConfigurable = <?= (int) $viewModel->preselectConfigurable() ?>;
         window.customerpriceConfig.optionPrices = [];
         window.customerpriceConfig.prices = [];
         window.customerpriceConfig.tierPricesPerUom = [];
@@ -86,7 +87,19 @@ $viewModel = $block->getData('viewModel'); ?>
                     if (!window.customerpriceConfig.productId || window.customerpriceConfig.productId !== productInfo.productId) {
                         document.querySelectorAll("[data-price-box=product-id-" + productInfo.productId + "]").forEach(element => {
                             element.outerHTML = productInfo.priceHtml;
+                            this.preselectConfigurableOnPLP(productInfo);
                         });
+                    }
+                },
+
+                preselectConfigurableOnPLP: function(productInfo) {
+                    if (productInfo.type === 'configurable' && window.preselectConfigurable) {
+                        const configurableConfig = JSON.parse(productInfo.configurableConfig);
+                        if (configurableConfig.defaultValues) {
+                            const simpleIndex = this.calculateSimpleIndexForFullSelection(configurableConfig);
+                            const detail = { detail : configurableConfig.optionPrices[simpleIndex] };
+                            window.dispatchEvent(new CustomEvent("update-prices-" + productInfo.productId, detail));
+                        }
                     }
                 },
 
@@ -152,10 +165,31 @@ $viewModel = $block->getData('viewModel'); ?>
                         if (!config.prices.tierPrices) {
                             config.prices.tierPrices = [];
                         }
-                        const detail = { detail : config.prices };
+                        let detail = { detail : config.prices };
                         window.dispatchEvent(new CustomEvent("update-initial-price-" + productId, {detail: config.prices.finalPrice.amount}));
+                        if (window.preselectConfigurable && config.defaultValues) {
+                            const simpleIndex = this.calculateSimpleIndexForFullSelection(config);
+                            detail = { detail : config.optionPrices[simpleIndex] };
+                        }
                         window.dispatchEvent(new CustomEvent("update-prices-" + productId, detail));
                     }
+                },
+
+                calculateSimpleIndexForFullSelection(config) {
+                    const productIndexes = config.index;
+                    return Object.keys(productIndexes).find(productIndex => {
+                        const productCandidateOptions = productIndexes[productIndex];
+
+                        for (const productOption in productCandidateOptions) {
+                            if (
+                                ! config.defaultValues[productOption] ||
+                                config.defaultValues[productOption] !== productCandidateOptions[productOption]
+                            ) {
+                                return false;
+                            }
+                        }
+                        return productIndex;
+                    });
                 },
 
                 createMutationObserver: function() {
