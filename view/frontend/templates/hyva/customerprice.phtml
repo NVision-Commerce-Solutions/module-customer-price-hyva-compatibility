@@ -24,13 +24,10 @@ $viewModel = $block->getData('viewModel'); ?>
                     let payload = this.collectPayload(container);
                     if (!parseInt(payload.length)) return;
 
-                    let customer = this.sectionData.customer;
-                    if (customer.price_token) {
-                        this.makePriceCall(payload, customer.price_token);
-                    }
+                    this.makePriceCall(payload);
                 },
 
-                async makePriceCall(payload, priceToken) {
+                async makePriceCall(payload) {
                     let self = this;
                     const postUrl = BASE_URL + 'rest/V1/customer-price/';
                     const response = await fetch(postUrl, {
@@ -38,7 +35,6 @@ $viewModel = $block->getData('viewModel'); ?>
                         body: JSON.stringify({
                             productInfo: payload,
                             storeId: window.customerpriceConfig.storeId,
-                            customerToken: priceToken,
                             productId: window.customerpriceConfig.productId
                         }),
                         headers: {
