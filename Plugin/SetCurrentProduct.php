@@ -9,12 +9,7 @@ use Hyva\Theme\ViewModel\CurrentProduct;
 
 class SetCurrentProduct
 {
-    private CurrentProduct $currentProduct;
-
-    public function __construct(CurrentProduct $currentProduct)
-    {
-        $this->currentProduct = $currentProduct;
-    }
+    public function __construct(private readonly CurrentProduct $currentProduct) {}
 
     /**
      * @param GetProductResponseData $subject
