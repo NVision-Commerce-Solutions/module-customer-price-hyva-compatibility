@@ -31,12 +31,14 @@ $viewModel = $block->getData('viewModel');
                         if (this.pricePerUom === undefined || this.uom === undefined) {
                             return;
                         }
-                        let priceUomElement = document.getElementById('price-per-uom-<?= (int)$product->getId() ?>');
-                        if (priceUomElement) {
-                            priceUomElement.innerHTML = '(' + this.pricePerUom + '/' + this.uom + ')';
+                        let priceUomElements = document.querySelectorAll('[id=price-per-uom-<?= (int)$product->getId() ?>]');
+                        if (priceUomElements.length) {
+                            priceUomElements.forEach(priceUomElement => {
+                                priceUomElement.innerHTML = '(' + this.pricePerUom + '/' + this.uom + ')';
+                            })
                         } else {
                             document.querySelectorAll('[id=product-price-<?= (int)$product->getId() ?>]').forEach(container => {
-                                priceUomElement = document.createElement('span');
+                                let priceUomElement = document.createElement('span');
                                 priceUomElement.classList.add('commerce365-price-per-uom');
                                 priceUomElement.setAttribute('id', 'price-per-uom-<?= (int)$product->getId() ?>');
                                 priceUomElement.innerHTML = '(' + this.pricePerUom + '/' + this.uom + ')';
