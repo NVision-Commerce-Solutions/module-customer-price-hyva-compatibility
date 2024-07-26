@@ -67,7 +67,7 @@ $viewModel = $block->getData('viewModel'); ?>
 
                             let config = this.preparePriceConfig(productInfo);
                             const detail = { "detail" : config.prices };
-                            const qty = document.getElementById('qty[' + productId + ']').value;
+                            const qty = document.getElementById('qty[' + productId + ']') ? document.getElementById('qty[' + productId + ']').value : 0;
                             if (qty > 1) {
                                 window.dispatchEvent(new CustomEvent("update-qty-" + productId, {"detail": qty}));
                             }
