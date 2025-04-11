@@ -1,5 +1,10 @@
-<?php
-/** @var \Commerce365\CustomerPrice\ViewModel\CustomerPrice $block */
+<?php declare(strict_types=1);
+
+use Commerce365\CustomerPrice\ViewModel\CustomerPrice;
+use Hyva\Theme\ViewModel\HyvaCsp;
+
+/** @var CustomerPrice $block */
+/** @var HyvaCsp $hyvaCsp */
 
 $viewModel = $block->getData('viewModel'); ?>
 <?php if ($viewModel->isLoggedIn() && $viewModel->isAjaxEnabled()): ?>
@@ -102,7 +107,7 @@ $viewModel = $block->getData('viewModel'); ?>
                     let tierPriceElement = document.getElementById('tier-price-container-' + productInfo.productId);
                     if (!tierPriceElement) {
                         tierPriceElement = document.createElement('div');
-                        tierPriceElement.classList.add('py-4', 'my-2', 'tier-price-container');
+                        tierPriceElement.classList.add('py-4', 'my-2', 'tier-price-container', 'commerce365-tier-price');
                         tierPriceElement.id = 'tier-price-container-' + productInfo.productId;
                         document.getElementById("product_addtocart_form").parentNode.appendChild(tierPriceElement);
                     }
@@ -184,9 +189,15 @@ $viewModel = $block->getData('viewModel'); ?>
                         attributeOldValue: true,
                         characterDataOldValue: true
                     });
-                }
+                },
+                eventListeners: {
+                    ['@private-content-loaded.window'](event) {
+                        this.hyvaCustomerPrice(event.detail.data);
+                    }
+                },
             }
         }
+        window.addEventListener('alpine:init', () => Alpine.data('initCommerce365CustomerPrice', initCommerce365CustomerPrice), {once: true});
 
         window.initConfigurableOptions = new Proxy(window.initConfigurableOptions , {
             // Declare function interceptor on the proxy handler object
@@ -231,7 +242,7 @@ $viewModel = $block->getData('viewModel'); ?>
                     } else {
                         let priceUomElement = document.getElementById('price-per-uom-' + instance.productId);
                         if (priceUomElement) {
-                            priceUomElement.innerHTML = uomPrice.pricePerUOM + '/' + uomPrice.UOM;
+                            priceUomElement.innerHTML = `${uomPrice.pricePerUOM}/${uomPrice.UOM}`;
                         } else {
                             const container = document.querySelector('[data-product-id="' + instance.productId + '"] .price-wrapper');
                             if (!container) {
@@ -240,7 +251,7 @@ $viewModel = $block->getData('viewModel'); ?>
                             priceUomElement = document.createElement('div');
                             priceUomElement.classList.add('commerce365-price-per-uom');
                             priceUomElement.setAttribute('id', 'price-per-uom-' + instance.productId);
-                            priceUomElement.innerHTML = uomPrice.pricePerUOM + '/' + uomPrice.UOM;
+                            priceUomElement.innerHTML = `${uomPrice.pricePerUOM}/${uomPrice.UOM}`;
                             container.parentNode.after(priceUomElement);
                         }
                     }
@@ -249,8 +260,9 @@ $viewModel = $block->getData('viewModel'); ?>
             }
         })
     </script>
+    <?php $hyvaCsp->registerInlineScript() ?>
 <div
-    x-data="initCommerce365CustomerPrice()"
-    @private-content-loaded.window="hyvaCustomerPrice($event.detail.data)"
+    x-data="initCommerce365CustomerPrice"
+    x-bind="eventListeners"
 ></div>
 <?php endif; ?>
