@@ -1,20 +1,23 @@
-<?php
+<?php declare(strict_types=1);
 
-declare(strict_types=1);
-
-use Magento\Catalog\Model\Product;
-use Magento\Framework\View\Element\Template;
+use Commerce365\CustomerPrice\ViewModel\CustomerPrice;
+use Magento\Catalog\Block\Product\Price as ProductPrice;
 use Magento\Framework\Escaper;
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
 
+/** @var ViewModelRegistry $viewModels */
+/** @var Price $block */
 /** @var Escaper $escaper */
+/** @var HyvaCsp $hyvaCsp */
 
-/** @var Template $block */
-
-/** @var Product $product */
+/** @var ProductPrice $product */
 $product = $block->getProduct();
-$viewModel = $block->getData('viewModel');
+
+/** @var CustomerPrice $customerPrice */
+$customerPrice = $viewModels->require(CustomerPrice::class);
 ?>
-<?php if ($viewModel->isLoggedIn() && $viewModel->isAjaxEnabled()): ?>
+<?php if ($customerPrice->isLoggedIn() && $customerPrice->isAjaxEnabled()): ?>
 <script>
     (() => {
         const initFnName = 'initPrice<?= (int)$product->getId() ?>'
@@ -73,4 +76,5 @@ $viewModel = $block->getData('viewModel');
         }
     })()
 </script>
+<?php $hyvaCsp->registerInlineScript() ?>
 <?php endif; ?>
