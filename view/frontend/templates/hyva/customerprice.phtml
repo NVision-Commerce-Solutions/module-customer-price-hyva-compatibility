@@ -1,16 +1,23 @@
 <?php declare(strict_types=1);
 
 use Commerce365\CustomerPrice\ViewModel\CustomerPrice;
+use Magento\Framework\View\Element\Template;
+use Magento\Framework\Escaper;
+use Hyva\Theme\Model\ViewModelRegistry;
 use Hyva\Theme\ViewModel\HyvaCsp;
 
-/** @var CustomerPrice $block */
+/** @var ViewModelRegistry $viewModels */
+/** @var Template $block */
+/** @var Escaper $escaper */
 /** @var HyvaCsp $hyvaCsp */
 
-$viewModel = $block->getData('viewModel'); ?>
-<?php if ($viewModel->isLoggedIn() && $viewModel->isAjaxEnabled()): ?>
+/** @var CustomerPrice $customerPrice */
+$customerPrice = $viewModels->require(CustomerPrice::class);
+?>
+<?php if ($customerPrice->isLoggedIn() && $customerPrice->isAjaxEnabled()): ?>
     <script>
-        window.customerpriceConfig = <?= $viewModel->getConfig() ?>;
-        window.preselectConfigurable = <?= (int) $viewModel->preselectConfigurable() ?>;
+        window.customerpriceConfig = <?= $customerPrice->getConfig() ?>;
+        window.preselectConfigurable = <?= (int) $customerPrice->preselectConfigurable() ?>;
         window.customerpriceConfig.optionPrices = [];
         window.customerpriceConfig.prices = [];
         window.customerpriceConfig.tierPricesPerUom = [];
