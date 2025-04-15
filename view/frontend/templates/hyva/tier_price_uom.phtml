@@ -1,16 +1,14 @@
-<?php
+<?php declare(strict_types=1);
 
-declare(strict_types=1);
-
-use Magento\Catalog\Model\Product;
-use Magento\Framework\View\Element\Template;
+use Magento\Catalog\Block\Product\Price as ProductPrice;
 use Magento\Framework\Escaper;
+use Hyva\Theme\ViewModel\HyvaCsp;
 
+/** @var Price $block */
 /** @var Escaper $escaper */
+/** @var HyvaCsp $hyvaCsp */
 
-/** @var Template $block */
-
-/** @var Product $product */
+/** @var ProductPrice $product */
 $product = $block->getProduct();
 ?>
 
@@ -48,3 +46,4 @@ $product = $block->getProduct();
         }
     })()
 </script>
+<?php $hyvaCsp->registerInlineScript() ?>
