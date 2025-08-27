@@ -76,5 +76,5 @@ $customerPrice = $viewModels->require(CustomerPrice::class);
         }
     })()
 </script>
-<?php $hyvaCsp->registerInlineScript() ?>
+    <?php if (isset($hyvaCsp) && method_exists($hyvaCsp, 'registerInlineScript')) $hyvaCsp->registerInlineScript(); ?>
 <?php endif; ?>
